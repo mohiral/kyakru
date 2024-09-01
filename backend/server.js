@@ -4,10 +4,10 @@ import cors from 'cors';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
 
-// Load environment variables from .env file
 dotenv.config();
 
 const app = express();
+const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
@@ -15,8 +15,8 @@ app.use(bodyParser.json());
 
 // Connect to MongoDB using the URI from environment variables
 mongoose.connect(process.env.MONGO_URI, {
-    // useNewUrlParser: true,
-    // useUnifiedTopology: true,
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
 })
 .then(() => console.log('Connected to MongoDB'))
 .catch(err => console.error('Failed to connect to MongoDB', err));
@@ -241,96 +241,96 @@ app.delete('/deleteDataa/:id', async (req, res) => {
 
 app.put('/updateDataa/:id', async (req, res) => {
     const { time, name, result1, result2 } = req.body;
+
     if (!time || !name || !result1 || !result2) {
-        return res.status(400).json({ message: 'Missing required fields' });
+        return res.status(400).json({ error: 'All fields are required' });
     }
+
     try {
         const updatedData = await DataA.findByIdAndUpdate(
             req.params.id,
             { time, name, result1, result2 },
             { new: true }
         );
+
         if (!updatedData) {
-            return res.status(404).json({ message: 'Data not found' });
+            return res.status(404).json({ error: 'Data not found' });
         }
+
         res.status(200).json(updatedData);
     } catch (error) {
         console.error('Error updating data:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Dynamic routes for any table based on the table name
+app.get('/:tableName', async (req, res) => {
+    try {
+        const { tableName } = req.params;
+        const Model = getTableModel(tableName);
+        const data = await Model.find();
+        res.status(200).json(data);
+    } catch (error) {
+        console.error(`Error fetching data from ${req.params.tableName}:`, error);
         res.status(500).json({ message: 'Internal Server Error', error: error.message });
     }
 });
 
-// Routes for dynamic tables
-app.post('/addTableData', async (req, res) => {
-    const { tableName, name, today, yesterday } = req.body;
+app.post('/:tableName', validateTableData, async (req, res) => {
     try {
-        const Table = getTableModel(tableName);
-        const newData = new Table({ name, today, yesterday });
+        const { tableName } = req.params;
+        const { name, today, yesterday } = req.body;
+
+        const Model = getTableModel(tableName);
+        const newData = new Model({ name, today, yesterday });
+
         await newData.save();
         res.status(201).json(newData);
     } catch (error) {
-        console.error('Error adding table data:', error);
+        console.error(`Error adding data to ${req.params.tableName}:`, error);
         res.status(500).json({ message: 'Internal Server Error', error: error.message });
     }
 });
 
-app.get('/getTableNames', async (req, res) => {
+app.delete('/:tableName/:id', async (req, res) => {
     try {
-        const tableNames = await getTableNames();
-        res.json(tableNames);
-    } catch (error) {
-        console.error('Error fetching table names:', error);
-        res.status(500).json({ error: 'Failed to fetch table names.' });
-    }
-});
-
-app.get('/getTableData/:tableName', async (req, res) => {
-    const tableName = req.params.tableName;
-    try {
-        const Table = getTableModel(tableName);
-        const data = await Table.find();
-        res.status(200).json(data);
-    } catch (error) {
-        console.error('Error fetching table data:', error);
-        res.status(500).json({ message: 'Internal Server Error', error: error.message });
-    }
-});
-
-app.put('/updateTableData/:tableName/:id', validateTableData, async (req, res) => {
-    const { tableName, id } = req.params;
-    const { name, today, yesterday } = req.body;
-    try {
-        const Table = getTableModel(tableName);
-        const updatedData = await Table.findByIdAndUpdate(
-            id,
-            { name, today, yesterday },
-            { new: true }
-        );
-        if (!updatedData) {
-            return res.status(404).json({ message: 'Data not found' });
-        }
-        res.status(200).json(updatedData);
-    } catch (error) {
-        console.error('Error updating table data:', error);
-        res.status(500).json({ message: 'Internal Server Error', error: error.message });
-    }
-});
-
-app.delete('/deleteTableData/:tableName/:id', async (req, res) => {
-    const { tableName, id } = req.params;
-    try {
-        const Table = getTableModel(tableName);
-        const result = await Table.findByIdAndDelete(id);
+        const { tableName } = req.params;
+        const Model = getTableModel(tableName);
+        const result = await Model.findByIdAndDelete(req.params.id);
         if (!result) {
             return res.status(404).json({ message: 'Data not found' });
         }
         res.status(200).json({ message: 'Data deleted successfully' });
     } catch (error) {
-        console.error('Error deleting table data:', error);
+        console.error(`Error deleting data from ${req.params.tableName}:`, error);
+        res.status(500).json({ message: 'Internal Server Error', error: error.message });
+    }
+});
+
+app.put('/:tableName/:id', validateTableData, async (req, res) => {
+    try {
+        const { tableName } = req.params;
+        const { name, today, yesterday } = req.body;
+
+        const Model = getTableModel(tableName);
+        const updatedData = await Model.findByIdAndUpdate(
+            req.params.id,
+            { name, today, yesterday },
+            { new: true }
+        );
+
+        if (!updatedData) {
+            return res.status(404).json({ message: 'Data not found' });
+        }
+        res.status(200).json(updatedData);
+    } catch (error) {
+        console.error(`Error updating data in ${req.params.tableName}:`, error);
         res.status(500).json({ message: 'Internal Server Error', error: error.message });
     }
 });
 
 // Start the server
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+});
