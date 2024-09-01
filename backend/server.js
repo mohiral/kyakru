@@ -4,6 +4,9 @@ import cors from 'cors';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
 
+
+import tableRoutes from './routes/tableRoutes.js';
+
 dotenv.config();
 
 const app = express();
@@ -12,6 +15,9 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
+
+// Use routes
+app.use('/', tableRoutes);
 
 // Connect to MongoDB using the URI from environment variables
 mongoose.connect(process.env.MONGO_URI, {
