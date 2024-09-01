@@ -68,48 +68,56 @@ const DataFourth = () => {
     const [error, setError] = useState(null);
     const [editingId, setEditingId] = useState(null);
 
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3002';
+    const API_URL = import.meta.env.VITE_API_URL || 'https://satta-3.onrender.com'; // Fallback URL
 
+    // Fetch table names on component mount
     useEffect(() => {
-        setLoading(true);
-        axios
-            .get(`${API_URL}/getTableNames`)
-            .then((response) => {
+        const fetchTableNames = async () => {
+            setLoading(true);
+            try {
+                const response = await axios.get(`${API_URL}/getTableNames`);
                 const filteredTableNames = response.data.filter((name) =>
                     name.startsWith('Table')
                 );
                 setTableNames(filteredTableNames);
-                setLoading(false);
                 setError(null);
-            })
-            .catch((error) => {
+            } catch (error) {
                 console.error('Error fetching table names:', error);
                 setError('Failed to fetch table names.');
+            } finally {
                 setLoading(false);
-            });
+            }
+        };
+
+        fetchTableNames();
     }, [API_URL]);
 
+    // Fetch data for the selected table
     useEffect(() => {
-        if (currentTable) {
-            setLoading(true);
-            axios
-                .get(`${API_URL}/getTableData/${currentTable}`)
-                .then((response) => {
+        const fetchTableData = async () => {
+            if (currentTable) {
+                setLoading(true);
+                try {
+                    const encodedTableName = encodeURIComponent(currentTable);
+                    const response = await axios.get(`${API_URL}/getTableData/${encodedTableName}`);
                     setTablesData((prevTablesData) => ({
                         ...prevTablesData,
                         [currentTable]: response.data,
                     }));
-                    setLoading(false);
                     setError(null);
-                })
-                .catch((error) => {
+                } catch (error) {
                     console.error('Error fetching table data:', error);
                     setError('Failed to fetch table data.');
+                } finally {
                     setLoading(false);
-                });
-        }
+                }
+            }
+        };
+
+        fetchTableData();
     }, [currentTable, API_URL]);
 
+    // Handle form input changes
     const handleFormChange = (e) => {
         const { name, value } = e.target;
         setFormData({
@@ -118,7 +126,8 @@ const DataFourth = () => {
         });
     };
 
-    const handleFormSubmit = (e) => {
+    // Handle form submission for adding or updating data
+    const handleFormSubmit = async (e) => {
         e.preventDefault();
         if (!currentTable) return;
 
@@ -126,37 +135,37 @@ const DataFourth = () => {
             ? `${API_URL}/updateTableData/${currentTable}/${editingId}`
             : `${API_URL}/addTableData`;
 
-        axios
-            .post(url, {
+        try {
+            const response = await axios.post(url, {
                 tableName: currentTable,
                 ...formData,
-            })
-            .then((response) => {
-                const newData = response.data;
-                setTablesData((prevTablesData) => ({
-                    ...prevTablesData,
-                    [currentTable]: editingId
-                        ? prevTablesData[currentTable].map((item) => (item._id === editingId ? newData : item))
-                        : [...(prevTablesData[currentTable] || []), newData],
-                }));
-                setFormData({
-                    name: '',
-                    today: '',
-                    yesterday: '',
-                });
-                setEditingId(null);
-                setError(null);
-            })
-            .catch((error) => {
-                console.error('Error adding/updating table data:', error);
-                setError('Failed to add/update table data.');
             });
+            const newData = response.data;
+            setTablesData((prevTablesData) => ({
+                ...prevTablesData,
+                [currentTable]: editingId
+                    ? prevTablesData[currentTable].map((item) => (item._id === editingId ? newData : item))
+                    : [...(prevTablesData[currentTable] || []), newData],
+            }));
+            setFormData({
+                name: '',
+                today: '',
+                yesterday: '',
+            });
+            setEditingId(null);
+            setError(null);
+        } catch (error) {
+            console.error('Error adding/updating table data:', error);
+            setError('Failed to add/update table data.');
+        }
     };
 
+    // Handle table selection
     const handleTableChange = (e) => {
         setCurrentTable(e.target.value);
     };
 
+    // Handle adding a new table
     const handleAddTable = () => {
         const newTableName = `Table ${tableNames.length + 1}`;
         if (!tableNames.includes(newTableName)) {
@@ -169,6 +178,7 @@ const DataFourth = () => {
         }
     };
 
+    // Handle editing a row
     const handleEdit = (id) => {
         const row = tablesData[currentTable]?.find((item) => item._id === id);
         if (row) {
@@ -181,6 +191,7 @@ const DataFourth = () => {
         }
     };
 
+    // Handle deleting a row
     const handleDelete = async (id) => {
         try {
             const response = await axios.delete(`${API_URL}/deleteTableData/${id}`);
@@ -262,12 +273,12 @@ const DataFourth = () => {
                     type="submit"
                     className="bg-green-500 text-white rounded px-4 py-2"
                 >
-                    {editingId ? 'Update' : 'Add'} Data
+                    {editingId ? 'Update' : 'Add'}
                 </button>
             </form>
-            {currentTable && (
+            {tablesData[currentTable] && (
                 <Table
-                    data={tablesData[currentTable] || []}
+                    data={tablesData[currentTable]}
                     columns={['Name', 'Yesterday', 'Today']}
                     onEdit={handleEdit}
                     onDelete={handleDelete}

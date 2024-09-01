@@ -9,12 +9,13 @@ const DataFirst = () => {
     const [editIndex, setEditIndex] = useState(null);
 
     // Get API URL from environment variables
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3002'; // Fallback URL
+    // const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3002'; // Fallback URL
+    const API_URL = import.meta.env.VITE_API_URL || 'https://satta-3.onrender.com/'; // Fallback URL
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const response = await fetch(`${API_URL}/getData`);
+                const response = await fetch('https://satta-3.onrender.com/getData');
                 if (!response.ok) {
                     throw new Error(`HTTP error! Status: ${response.status}`);
                 }

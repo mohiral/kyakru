@@ -7,7 +7,7 @@ const ResultsTable = () => {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3002';
+  const API_URL = 'https://satta-3.onrender.com';  // Your correct API base URL
 
   useEffect(() => {
     setLoading(true);
@@ -33,9 +33,9 @@ const ResultsTable = () => {
     if (tableNames.length > 0) {
       setLoading(true);
       const tableDataPromises = tableNames.map(name =>
-        axios.get(`${API_URL}/getTableData/${name}`)
+        axios.get(`${API_URL}/getTableData/${encodeURIComponent(name)}`)
       );
-
+  
       Promise.all(tableDataPromises)
         .then((responses) => {
           console.log('Table data responses:', responses);
@@ -63,7 +63,6 @@ const ResultsTable = () => {
         {tablesData.length > 0 ? (
           tablesData.map((tableData, index) => (
             <div key={index} className="bg-white shadow-lg rounded-lg overflow-hidden mb-8">
-              {/* <h2 className="text-xl font-semibold p-4 bg-green-500 text-white">{`Table ${index + 1}`}</h2> */}
               <table className="min-w-full bg-white divide-y divide-gray-200">
                 <thead className="bg-green-500 text-white">
                   <tr>

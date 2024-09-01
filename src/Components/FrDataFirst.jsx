@@ -3,7 +3,9 @@ import React, { useState, useEffect } from 'react';
 const FrDataFirst = () => {
     const [currentTime, setCurrentTime] = useState(new Date());
     const [results, setResults] = useState([]);
-    const API_URL = 'http://localhost:3002'; // Make sure this matches the backend API
+    // const API_URL = 'http://localhost:3002'; // Make sure this matches the backend API
+    const API_URL = import.meta.env.VITE_API_URL || 'https://satta-3.onrender.com/'; // Fallback URL
+
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -16,7 +18,8 @@ const FrDataFirst = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const response = await fetch(`${API_URL}/getData`);
+                // const response = await fetch(`${API_URL}/getData`);
+                const response = await fetch('https://satta-3.onrender.com/getData');
                 if (!response.ok) {
                     throw new Error(`HTTP error! Status: ${response.status}`);
                 }

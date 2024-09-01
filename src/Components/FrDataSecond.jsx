@@ -3,12 +3,15 @@ import { MdArrowForward } from 'react-icons/md'; // Import the desired icon
 
 const FrDataSecond = () => {
     const [results, setResults] = useState([]);
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3002'; // Fallback URL
+    // const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3002'; // Fallback URL
+    const API_URL = import.meta.env.VITE_API_URL || 'https://satta-3.onrender.com/'; // Fallback URL
+
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const response = await fetch(`${API_URL}/getDataa`);
+                // const response = await fetch(`${API_URL}/getDataa`);
+                const response = await fetch('https://satta-3.onrender.com/getDataa');
                 if (!response.ok) {
                     throw new Error(`HTTP error! Status: ${response.status}`);
                 }

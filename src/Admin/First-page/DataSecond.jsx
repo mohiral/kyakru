@@ -11,13 +11,16 @@ const DataSecond = () => {
     const [error, setError] = useState('');
 
     // Get API URL from environment variables
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3002'; // Fallback URL
+    // const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3002'; // Fallback URL
+    const API_URL = import.meta.env.VITE_API_URL || 'https://satta-3.onrender.com/'; // Fallback URL
+    
 
     // Fetch data on component mount
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const response = await fetch(`${API_URL}/getDataa`);
+                // const response = await fetch(`${API_URL}/getDataa`);
+                const response = await fetch('https://satta-3.onrender.com/getDataa');
                 if (!response.ok) {
                     throw new Error(`HTTP error! Status: ${response.status}`);
                 }
