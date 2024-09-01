@@ -58,6 +58,15 @@ const getTableModel = (tableName) => {
     return mongoose.models[tableName] || mongoose.model(tableName, tableSchema, tableName);
 };
 
+// Validate Table Data Middleware
+const validateTableData = (req, res, next) => {
+    const { name, today, yesterday } = req.body;
+    if (!name || typeof name !== 'string' || !today || !yesterday) {
+        return res.status(400).json({ message: 'Missing or invalid required fields' });
+    }
+    next();
+};
+
 // Example of a more generic approach to CRUD operations
 const handleCRUD = (Model) => {
     return {
@@ -115,7 +124,6 @@ app.get('/getDataThird', async (req, res) => {
         const entries = await DataThird.find();
         res.status(200).json(entries);
     } catch (error) {
-        console.error('Error fetching data:', error);
         res.status(500).json({ message: 'Internal Server Error', error: error.message });
     }
 });
@@ -130,7 +138,6 @@ app.post('/addDataThird', async (req, res) => {
         await newEntry.save();
         res.status(201).json(newEntry);
     } catch (error) {
-        console.error('Error adding data:', error);
         res.status(500).json({ message: 'Internal Server Error', error: error.message });
     }
 });
@@ -143,7 +150,6 @@ app.delete('/deleteDataThird/:id', async (req, res) => {
         }
         res.status(200).json({ message: 'Data deleted successfully' });
     } catch (error) {
-        console.error('Error deleting data:', error);
         res.status(500).json({ message: 'Internal Server Error', error: error.message });
     }
 });
@@ -164,7 +170,6 @@ app.put('/updateDataThird/:id', async (req, res) => {
         }
         res.status(200).json(updatedData);
     } catch (error) {
-        console.error('Error updating data:', error);
         res.status(500).json({ message: 'Internal Server Error', error: error.message });
     }
 });
@@ -175,7 +180,6 @@ app.get('/getDataa', async (req, res) => {
         const data = await DataA.find();
         res.status(200).json(data);
     } catch (error) {
-        console.error('Error fetching data:', error);
         res.status(500).json({ message: 'Internal Server Error', error: error.message });
     }
 });
@@ -192,8 +196,7 @@ app.post('/addDataa', async (req, res) => {
         await newData.save();
         res.status(201).json(newData);
     } catch (error) {
-        console.error('Error saving data:', error.message); // Log the error message
-        res.status(500).json({ error: 'Internal Server Error' });
+        res.status(500).json({ error: 'Internal Server Error', error: error.message });
     }
 });
 
@@ -205,8 +208,7 @@ app.delete('/deleteDataa/:id', async (req, res) => {
         }
         res.status(200).json({ message: 'Data deleted successfully' });
     } catch (error) {
-        console.error('Error deleting data:', error);
-        res.status(500).json({ message: 'Internal Server Error', error: error.message });
+        res.status(500).json({ error: 'Internal Server Error', error: error.message });
     }
 });
 
@@ -230,8 +232,7 @@ app.put('/updateDataa/:id', async (req, res) => {
 
         res.status(200).json(updatedData);
     } catch (error) {
-        console.error('Error updating data:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        res.status(500).json({ error: 'Internal Server Error', error: error.message });
     }
 });
 
@@ -243,7 +244,6 @@ app.get('/:tableName', async (req, res) => {
         const data = await Model.find();
         res.status(200).json(data);
     } catch (error) {
-        console.error(`Error fetching data from ${req.params.tableName}:`, error);
         res.status(500).json({ message: 'Internal Server Error', error: error.message });
     }
 });
@@ -251,15 +251,11 @@ app.get('/:tableName', async (req, res) => {
 app.post('/:tableName', validateTableData, async (req, res) => {
     try {
         const { tableName } = req.params;
-        const { name, today, yesterday } = req.body;
-
         const Model = getTableModel(tableName);
-        const newData = new Model({ name, today, yesterday });
-
+        const newData = new Model(req.body);
         await newData.save();
         res.status(201).json(newData);
     } catch (error) {
-        console.error(`Error adding data to ${req.params.tableName}:`, error);
         res.status(500).json({ message: 'Internal Server Error', error: error.message });
     }
 });
@@ -269,13 +265,11 @@ app.delete('/:tableName/:id', async (req, res) => {
         const { tableName, id } = req.params;
         const Model = getTableModel(tableName);
         const result = await Model.findByIdAndDelete(id);
-
         if (!result) {
             return res.status(404).json({ message: 'Data not found' });
         }
         res.status(200).json({ message: 'Data deleted successfully' });
     } catch (error) {
-        console.error(`Error deleting data from ${req.params.tableName}:`, error);
         res.status(500).json({ message: 'Internal Server Error', error: error.message });
     }
 });
@@ -284,6 +278,10 @@ app.put('/:tableName/:id', validateTableData, async (req, res) => {
     try {
         const { tableName, id } = req.params;
         const { name, today, yesterday } = req.body;
+
+        if (!name || !today || !yesterday) {
+            return res.status(400).json({ message: 'Missing required fields' });
+        }
 
         const Model = getTableModel(tableName);
         const updatedData = await Model.findByIdAndUpdate(
@@ -295,23 +293,11 @@ app.put('/:tableName/:id', validateTableData, async (req, res) => {
         if (!updatedData) {
             return res.status(404).json({ message: 'Data not found' });
         }
+
         res.status(200).json(updatedData);
     } catch (error) {
-        console.error(`Error updating data in ${req.params.tableName}:`, error);
         res.status(500).json({ message: 'Internal Server Error', error: error.message });
     }
 });
 
-// Validate Table Data Middleware
-const validateTableData = (req, res, next) => {
-    const { name, today, yesterday } = req.body;
-    if (!name || typeof name !== 'string' || !today || !yesterday) {
-        return res.status(400).json({ message: 'Missing or invalid required fields' });
-    }
-    next();
-};
-
-// Start the server
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-});
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
