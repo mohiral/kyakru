@@ -60,6 +60,7 @@ const getTableModel = (tableName) => {
 
 // Get Table Names from MongoDB
 const getTableNames = async () => {
+    debugger
     try {
         const collections = await mongoose.connection.db.listCollections().toArray();
         return collections.map(collection => collection.name);
