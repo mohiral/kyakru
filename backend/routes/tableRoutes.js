@@ -1,73 +1,80 @@
-import express from 'express';
-import getTableModel from '../models/tableModel.js';
-import validateTableData from '../middlewares/validateTableData.js'; // Adjust path if necessary
-
+// import getTableModel from '../models/tableModel.js';
+const express = require('express');
 const router = express.Router();
+const Table = require('../models/tableModel.js');
 
-// Routes for CRUD operations on dynamic tables
-router.get('/:tableName', async (req, res) => {
+// Add or update data
+router.post('/addTableData', async (req, res) => {
+    const { tableName, name, today, yesterday, id } = req.body;
     try {
-        const { tableName } = req.params;
-        const Model = getTableModel(tableName);
-        const data = await Model.find();
+        const query = id ? { _id: id } : { tableName, name };
+        const update = { tableName, name, today, yesterday };
+        const options = { new: true, upsert: true };
+
+        const result = await Table.findOneAndUpdate(query, update, options);
+        res.status(201).json(result);
+    } catch (error) {
+        console.error('Error adding/updating table data:', error);
+        res.status(500).json({ message: 'Internal Server Error', error: error.message });
+    }
+});
+
+// Get all table names
+router.get('/getTableNames', async (req, res) => {
+    try {
+        const tableNames = await Table.distinct('tableName');
+        res.json(tableNames);
+    } catch (error) {
+        console.error('Error fetching table names:', error);
+        res.status(500).json({ error: 'Failed to fetch table names.' });
+    }
+});
+
+// Get data for a specific table
+router.get('/getTableData/:tableName', async (req, res) => {
+    const tableName = req.params.tableName;
+    try {
+        const data = await Table.find({ tableName });
         res.status(200).json(data);
     } catch (error) {
-        console.error(`Error fetching data from ${req.params.tableName}:`, error);
+        console.error('Error fetching table data:', error);
         res.status(500).json({ message: 'Internal Server Error', error: error.message });
     }
 });
 
-router.post('/:tableName', validateTableData, async (req, res) => {
+// Update data for a specific table and id
+router.put('/updateTableData/:id', async (req, res) => {
+    const { id } = req.params;
+    const { name, tableName, today, yesterday } = req.body;
     try {
-        const { tableName } = req.params;
-        const { name, today, yesterday } = req.body;
-
-        const Model = getTableModel(tableName);
-        const newData = new Model({ name, today, yesterday });
-
-        await newData.save();
-        res.status(201).json(newData);
-    } catch (error) {
-        console.error(`Error adding data to ${req.params.tableName}:`, error);
-        res.status(500).json({ message: 'Internal Server Error', error: error.message });
-    }
-});
-
-router.delete('/:tableName/:id', async (req, res) => {
-    try {
-        const { tableName } = req.params;
-        const Model = getTableModel(tableName);
-        const result = await Model.findByIdAndDelete(req.params.id);
-        if (!result) {
-            return res.status(404).json({ message: 'Data not found' });
-        }
-        res.status(200).json({ message: 'Data deleted successfully' });
-    } catch (error) {
-        console.error(`Error deleting data from ${req.params.tableName}:`, error);
-        res.status(500).json({ message: 'Internal Server Error', error: error.message });
-    }
-});
-
-router.put('/:tableName/:id', validateTableData, async (req, res) => {
-    try {
-        const { tableName } = req.params;
-        const { name, today, yesterday } = req.body;
-
-        const Model = getTableModel(tableName);
-        const updatedData = await Model.findByIdAndUpdate(
-            req.params.id,
-            { name, today, yesterday },
+        const updatedData = await Table.findByIdAndUpdate(
+            id,
+            { tableName, name, today, yesterday },
             { new: true }
         );
-
         if (!updatedData) {
             return res.status(404).json({ message: 'Data not found' });
         }
         res.status(200).json(updatedData);
     } catch (error) {
-        console.error(`Error updating data in ${req.params.tableName}:`, error);
+        console.error('Error updating table data:', error);
         res.status(500).json({ message: 'Internal Server Error', error: error.message });
     }
 });
 
-export default router;
+// Delete data for a specific id
+router.delete('/deleteTableData/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const result = await Table.findByIdAndDelete(id);
+        if (!result) {
+            return res.status(404).json({ message: 'Data not found' });
+        }
+        res.status(200).json({ message: 'Data deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting table data:', error);
+        res.status(500).json({ message: 'Internal Server Error', error: error.message });
+    }
+});
+
+module.exports = router;

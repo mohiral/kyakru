@@ -1,15 +1,12 @@
-import mongoose from 'mongoose';
+const mongoose = require('mongoose');
 
-// Function to get or create a model dynamically based on the table name
-const getTableModel = (tableName) => {
-    const tableSchema = new mongoose.Schema({
-        name: String,
-        today: String,
-        yesterday: String,
-    });
+const tableSchema = new mongoose.Schema({
+    tableName: { type: String, required: true }, // To distinguish different tables
+    name: { type: String, required: true },
+    today: { type: String, required: true },
+    yesterday: { type: String, required: true }
+});
 
-    // Ensure the model is created or retrieved correctly
-    return mongoose.models[tableName] || mongoose.model(tableName, tableSchema, tableName);
-};
+const Table = mongoose.model('Table', tableSchema);
 
-export default getTableModel;
+module.exports = Table;
