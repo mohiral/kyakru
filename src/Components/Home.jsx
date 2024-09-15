@@ -21,7 +21,7 @@ const HomePage = () => {
   useEffect(() => {
     const fetchOffers = async () => {
       try {
-        const response = await axios.get("https://carrentt-9.onrender.com/offers");
+        const response = await axios.get("http://localhost:5000/offers");
         setOffers(response.data);
       } catch (error) {
         console.error("Error fetching offers", error);
